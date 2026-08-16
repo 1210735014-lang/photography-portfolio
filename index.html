@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gloria · Photography Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Design Tokens
+   ============================================================ */
+:root{
+  --paper:#FAF8F3;
+  --paper-warm:#F2EFE7;
+  --paper-soft:#EDE9DE;
+  --ink:#1A1815;
+  --soft:#8A857C;
+  --softer:#B5B0A6;
+  --line:#E5E2DA;
+  --blue:#3B5BDB;
+  --blue-soft:#E8EDFB;
+  --brown:#241D16;
+  --brown-mid:#3A2E22;
+  --radius:24px;
+  --serif:'Cormorant Garamond',serif;
+  --sans:'Inter',sans-serif;
+  --shadow:0 24px 72px rgba(0,0,0,.10),0 8px 24px rgba(0,0,0,.06);
+  --shadow-lg:0 40px 100px rgba(0,0,0,.14),0 12px 40px rgba(0,0,0,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:var(--paper)}
+body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+
+/* ============================================================
+   Loading Screen
+   ============================================================ */
+.loading{position:fixed;inset:0;background:var(--brown);display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity .8s ease}
+.loading.hide{opacity:0;pointer-events:none}
+.loading-text{font-family:var(--serif);font-style:italic;font-weight:300;color:rgba(255,255,255,.35);font-size:16px;letter-spacing:.15em}
+
+/* ============================================================
+   Stage & Book
+   ============================================================ */
+.stage{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px}
+.book-wrap{position:relative;width:100%;max-width:1180px;flex:1;display:flex;align-items:center;justify-content:center}
+.book{position:relative;width:100%;max-width:1120px;height:min(78vh,700px);perspective:3200px}
+
+/* Base spread */
+.spread-base{position:absolute;inset:0;display:flex;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-lg);background:#fff}
+.pg-l,.pg-r{flex:1;position:relative;overflow:hidden}
+.spine{position:absolute;top:0;bottom:0;left:50%;width:2px;background:linear-gradient(to right,transparent,rgba(0,0,0,.04) 30%,rgba(0,0,0,.08) 50%,rgba(0,0,0,.04) 70%,transparent);z-index:5;pointer-events:none}
+
+/* ============================================================
+   3D Flip Mechanism
+   ============================================================ */
+.flipper{position:absolute;top:0;width:50%;height:100%;transform-style:preserve-3d;transition:transform .95s cubic-bezier(.3,0,.15,1);z-index:30;pointer-events:none}
+.flipper.flip-r{right:0;transform-origin:left center}
+.flipper.flip-l{left:0;transform-origin:right center}
+.flip-front,.flip-back{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;border-radius:0}
+.flip-front{border-radius:0 var(--radius) var(--radius) 0}
+.flip-back{transform:rotateY(180deg);border-radius:var(--radius) 0 0 var(--radius)}
+.flipper.flip-l .flip-front{border-radius:var(--radius) 0 0 var(--radius)}
+.flipper.flip-l .flip-back{border-radius:0 var(--radius) var(--radius) 0}
+.flipper.go-fwd{transform:rotateY(-180deg)}
+.flipper.go-bwd{transform:rotateY(180deg)}
+
+/* Page wrapper */
+.page{width:100%;height:100%;background:var(--paper);overflow:hidden;position:relative}
+.page.dark{background:var(--brown)}
+
+/* Watermark texture */
+.page::before{
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Ctext x='0' y='80' font-family='Cormorant Garamond,serif' font-size='11' fill='%23000' opacity='0.018' font-style='italic'%3EPhotography%3C/text%3E%3Ctext x='120' y='180' font-family='Cormorant Garamond,serif' font-size='11' fill='%23000' opacity='0.018' font-style='italic'%3EPhotography%3C/text%3E%3Ctext x='60' y='280' font-family='Cormorant Garamond,serif' font-size='11' fill='%23000' opacity='0.018' font-style='italic'%3EPhotography%3C/text%3E%3Ctext x='200' y='360' font-family='Cormorant Garamond,serif' font-size='11' fill='%23000' opacity='0.018' font-style='italic'%3EPhotography%3C/text%3E%3C/svg%3E");
+  background-repeat:repeat;pointer-events:none;z-index:0;
+}
+.page.dark::before{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Ctext x='0' y='80' font-family='Cormorant Garamond,serif' font-size='11' fill='%23fff' opacity='0.025' font-style='italic'%3EPhotography%3C/text%3E%3Ctext x='120' y='180' font-family='Cormorant Garamond,serif' font-size='11' fill='%23fff' opacity='0.025' font-style='italic'%3EPhotography%3C/text%3E%3Ctext x='60' y='280' font-family='Cormorant Garamond,serif' font-size='11' fill='%23fff' opacity='0.025' font-style='italic'%3EPhotography%3C/text%3E%3Ctext x='200' y='360' font-family='Cormorant Garamond,serif' font-size='11' fill='%23fff' opacity='0.025' font-style='italic'%3EPhotography%3C/text%3E%3C/svg%3E");
+}
+
+/* ============================================================
+   Cover — Left (Title)
+   ============================================================ */
+.cover-left{
+  background:var(--brown);
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:52px 48px;height:100%;position:relative;
+}
+.cover-left::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 50% at 50% 55%,rgba(255,235,200,.05),transparent 70%);
+  pointer-events:none;
+}
+.cover-corner-tl{font-family:var(--sans);font-size:9px;letter-spacing:.35em;color:rgba(255,255,255,.22);text-transform:uppercase;font-weight:400;position:relative;z-index:1}
+.cover-center{flex:1;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:1}
+.cover-label{font-family:var(--sans);font-size:10px;letter-spacing:.35em;color:rgba(255,255,255,.35);text-transform:uppercase;margin-bottom:18px;font-weight:500}
+.cover-title{
+  font-family:var(--serif);font-weight:300;
+  font-size:clamp(44px,7vw,82px);
+  color:rgba(255,255,255,.92);
+  line-height:.92;letter-spacing:-.015em;
+}
+.cover-title em{font-style:italic;font-weight:300;color:rgba(255,255,255,.45)}
+.cover-sub{font-family:var(--serif);font-style:italic;font-weight:300;font-size:14px;color:rgba(255,255,255,.28);margin-top:16px;letter-spacing:.02em}
+.cover-corner-bl{font-family:var(--sans);font-size:10px;letter-spacing:.3em;color:rgba(255,255,255,.3);text-transform:uppercase;font-weight:400;position:relative;z-index:1}
+
+/* ============================================================
+   Cover — Right (Polaroids)
+   ============================================================ */
+.cover-right{background:var(--brown);height:100%;position:relative;overflow:hidden}
+.cover-right::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 60% at 55% 45%,rgba(255,235,200,.07),transparent 60%);
+  pointer-events:none;z-index:1;
+}
+.cover-right .deco-text{
+  position:absolute;font-family:var(--sans);font-size:8px;letter-spacing:.3em;
+  color:rgba(255,255,255,.12);text-transform:uppercase;z-index:2;
+}
+.polaroid{
+  position:absolute;background:#F5F2EC;
+  padding:7px 7px 28px;
+  box-shadow:0 8px 28px rgba(0,0,0,.5),0 3px 8px rgba(0,0,0,.35);
+  z-index:3;
+  transition:transform .5s ease,box-shadow .5s ease;
+}
+.polaroid:hover{
+  transform:rotate(0deg) translateY(-6px) !important;
+  box-shadow:0 16px 40px rgba(0,0,0,.6),0 4px 12px rgba(0,0,0,.4);
+  z-index:10;
+}
+.polaroid img{
+  width:100%;height:auto;object-fit:cover;display:block;
+  filter:sepia(.06) brightness(.94) contrast(1.02);
+}
+.polaroid .cap{
+  font-family:var(--serif);font-style:italic;font-size:9px;
+  color:#9a958a;text-align:center;margin-top:5px;letter-spacing:.02em;
+}
+.pin{
+  position:absolute;width:12px;height:12px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#b8a890,#4a3a2a 70%,#2a1f15);
+  box-shadow:0 2px 4px rgba(0,0,0,.6),inset 0 -1px 2px rgba(0,0,0,.3);
+  z-index:5;top:-6px;left:50%;transform:translateX(-50%);
+}
+.clip{
+  position:absolute;width:16px;height:28px;
+  top:-12px;left:50%;transform:translateX(-50%);z-index:5;
+}
+.clip::before{
+  content:'';position:absolute;width:16px;height:16px;
+  border:2px solid rgba(180,170,155,.7);border-radius:50% 50% 0 0;
+  border-bottom:none;
+}
+
+/* ============================================================
+   Text Page
+   ============================================================ */
+.text-page{
+  padding:56px 48px;display:flex;flex-direction:column;
+  justify-content:center;height:100%;position:relative;z-index:1;
+}
+.tag{
+  font-family:var(--sans);font-size:9.5px;letter-spacing:.32em;
+  text-transform:uppercase;color:var(--blue);font-weight:600;
+  margin-bottom:24px;display:flex;align-items:center;gap:10px;
+}
+.tag .num{color:var(--softer);font-weight:400}
+.tag .dash{width:24px;height:1px;background:var(--line)}
+.headline{
+  font-family:var(--serif);font-weight:400;
+  font-size:clamp(28px,3.5vw,42px);
+  line-height:1.12;margin-bottom:24px;letter-spacing:-.012em;color:var(--ink);
+}
+.headline em{font-style:italic;color:var(--blue);font-weight:400}
+.deco-line{width:36px;height:1px;background:var(--line);margin:0 0 26px}
+.body-italic{
+  font-family:var(--serif);font-style:italic;font-weight:400;
+  font-size:14.5px;line-height:1.85;color:var(--soft);max-width:340px;
+}
+.body-italic p{margin-bottom:8px}
+.page-corner{
+  position:absolute;bottom:22px;font-family:var(--sans);
+  font-size:9px;letter-spacing:.25em;color:var(--softer);
+  text-transform:uppercase;z-index:1;
+}
+.page-corner.r{right:32px}
+.page-corner.l{left:32px}
+
+/* ============================================================
+   Photo Pages — NO CROP, framed plate style
+   Each photo preserved at native aspect ratio on paper-matte
+   ============================================================ */
+.plate-page{
+  padding:32px;height:100%;
+  display:flex;align-items:center;justify-content:center;
+  gap:18px;position:relative;z-index:1;background:var(--paper-warm);
+}
+.plate{
+  flex:1;height:100%;min-width:0;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.plate img{
+  max-width:100%;max-height:100%;width:auto;height:auto;
+  object-fit:contain;border-radius:2px;
+  box-shadow:0 10px 36px rgba(0,0,0,.10),0 2px 8px rgba(0,0,0,.05);
+  transition:transform 1.2s ease;
+}
+.plate:hover img{transform:scale(1.015)}
+.plate .pl-label{
+  position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);
+  font-family:var(--serif);font-style:italic;font-size:10px;
+  color:var(--softer);letter-spacing:.04em;white-space:nowrap;
+  opacity:0;transition:opacity .4s ease;
+}
+.plate:hover .pl-label{opacity:1}
+
+/* Single hero plate — fills full page */
+.plate-hero{
+  padding:36px;height:100%;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;z-index:1;background:var(--paper-warm);
+}
+.plate-hero img{
+  max-width:100%;max-height:100%;width:auto;height:auto;
+  object-fit:contain;border-radius:2px;
+  box-shadow:0 14px 48px rgba(0,0,0,.14),0 3px 12px rgba(0,0,0,.07);
+}
+.plate-hero .pl-caption{
+  position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+  font-family:var(--serif);font-style:italic;font-size:13px;
+  color:var(--soft);letter-spacing:.04em;text-align:center;
+}
+.plate-hero .pl-caption .pl-num{
+  font-family:var(--sans);font-style:normal;font-size:9px;
+  letter-spacing:.3em;color:var(--blue);text-transform:uppercase;
+  margin-right:14px;font-weight:600;vertical-align:middle;
+}
+
+/* ============================================================
+   Apple / Thank You Closing Page
+   ============================================================ */
+.apple-page{
+  height:100%;background:var(--paper-warm);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;z-index:1;padding:48px;text-align:center;
+}
+.apple{
+  font-size:120px;line-height:1;
+  filter:drop-shadow(0 14px 36px rgba(0,0,0,.18));
+  margin-bottom:36px;
+  animation:appleIn 1.4s cubic-bezier(.3,0,.15,1) both;
+  font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;
+}
+@keyframes appleIn{
+  0%{opacity:0;transform:scale(.3) translateY(40px) rotate(-15deg)}
+  60%{opacity:1;transform:scale(1.05) translateY(-4px) rotate(2deg)}
+  100%{opacity:1;transform:scale(1) translateY(0) rotate(0)}
+}
+.thanks{
+  font-family:var(--serif);font-style:italic;font-weight:300;
+  font-size:clamp(40px,5.5vw,68px);
+  color:var(--ink);letter-spacing:-.01em;line-height:1.05;
+  animation:fadeUp 1.2s ease .3s both;
+}
+.thanks em{font-style:normal;font-weight:400;color:var(--blue)}
+.thanks-sub{
+  font-family:var(--sans);font-size:10px;letter-spacing:.4em;
+  color:var(--softer);text-transform:uppercase;font-weight:500;
+  margin-top:28px;
+  animation:fadeUp 1.2s ease .6s both;
+}
+.thanks-fin{
+  font-family:var(--serif);font-style:italic;font-weight:300;
+  font-size:14px;color:var(--soft);margin-top:14px;letter-spacing:.02em;
+  animation:fadeUp 1.2s ease .9s both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============================================================
+   Finale Left Page — "Photography Portfolio"
+   ============================================================ */
+.finale-left{
+  height:100%;background:var(--paper-warm);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;z-index:1;padding:48px;text-align:center;
+}
+.finale-label{
+  font-family:var(--sans);font-size:10px;letter-spacing:.4em;
+  color:var(--softer);text-transform:uppercase;font-weight:500;
+  margin-bottom:32px;
+  animation:fadeUp 1.2s ease .2s both;
+}
+.finale-title{
+  font-family:var(--serif);font-weight:300;
+  font-size:clamp(36px,4.5vw,58px);
+  color:var(--ink);letter-spacing:-.015em;line-height:1;
+  animation:fadeUp 1.2s ease .4s both;
+}
+.finale-title-sub{
+  font-family:var(--serif);font-weight:300;
+  font-size:clamp(36px,4.5vw,58px);
+  color:var(--blue);letter-spacing:-.015em;line-height:1.1;
+  margin-top:4px;
+  animation:fadeUp 1.2s ease .6s both;
+}
+.finale-title-sub em{font-style:italic;font-weight:300}
+.finale-line{
+  width:40px;height:1px;background:var(--line);
+  margin:36px 0 24px;
+  animation:fadeUp 1.2s ease .8s both;
+}
+.finale-meta{
+  font-family:var(--sans);font-size:9px;letter-spacing:.32em;
+  color:var(--softer);text-transform:uppercase;font-weight:400;
+  animation:fadeUp 1.2s ease 1s both;
+}
+
+/* ============================================================
+   Navigation Arrows
+   ============================================================ */
+.arrow{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:48px;height:48px;border-radius:50%;
+  background:#fff;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:50;transition:all .25s ease;
+  box-shadow:0 4px 20px rgba(0,0,0,.08);
+  font-size:20px;color:var(--ink);user-select:none;line-height:1;
+}
+.arrow:hover{
+  background:var(--ink);color:#fff;border-color:var(--ink);
+  transform:translateY(-50%) scale(1.08);
+  box-shadow:0 6px 28px rgba(0,0,0,.15);
+}
+.arrow:disabled{opacity:.2;cursor:default;transform:translateY(-50%)}
+.arrow:disabled:hover{background:#fff;color:var(--ink);border-color:var(--line);transform:translateY(-50%)}
+.arrow-l{left:-8px}.arrow-r{right:-8px}
+
+/* ============================================================
+   Pagination Dots
+   ============================================================ */
+.dots{display:flex;gap:10px;align-items:center;padding:20px 0 16px}
+.dot{
+  width:7px;height:7px;border-radius:50%;
+  border:1.5px solid #C8C4BC;background:transparent;
+  cursor:pointer;transition:all .35s ease;padding:0;
+}
+.dot:hover{border-color:var(--blue)}
+.dot.active{background:var(--blue);border-color:var(--blue);transform:scale(1.4)}
+.page-label{font-family:var(--sans);font-size:10px;color:var(--softer);letter-spacing:.22em;margin-left:16px;font-weight:400}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media(max-width:760px){
+  .book{height:auto;max-height:none;aspect-ratio:auto}
+  .spread-base{flex-direction:column}
+  .pg-l,.pg-r{min-height:320px}
+  .spine{display:none}
+  .flipper{width:100%}
+  .flipper.flip-r{transform-origin:top center}
+  .flipper.flip-l{transform-origin:bottom center}
+  .flipper.go-fwd{transform:rotateX(-180deg)}
+  .flipper.go-bwd{transform:rotateX(180deg)}
+  .flip-back{transform:rotateX(180deg)}
+  .cover-left{padding:32px 24px}
+  .cover-title{font-size:36px}
+  .text-page{padding:32px 24px}
+  .headline{font-size:26px}
+  .polaroid{transform:scale(.65) !important}
+  .arrow-l{left:4px}.arrow-r{right:4px}
+  .arrow{width:40px;height:40px;font-size:18px}
+  .plate-page{flex-direction:column;gap:14px;padding:24px}
+  .plate-hero{padding:24px}
+  .apple{font-size:88px}
+}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading"><div class="loading-text">Opening the album…</div></div>
+
+<div class="stage">
+  <div class="book-wrap">
+    <div class="book" id="book">
+      <div class="spread-base" id="base">
+        <div class="pg-l" id="baseL"></div>
+        <div class="spine"></div>
+        <div class="pg-r" id="baseR"></div>
+      </div>
+      <div class="flipper" id="flipper" style="display:none">
+        <div class="flip-front" id="flipF"></div>
+        <div class="flip-back" id="flipB"></div>
+      </div>
+    </div>
+    <button class="arrow arrow-l" id="prev" onclick="go(-1)">&#8249;</button>
+    <button class="arrow arrow-r" id="next" onclick="go(1)">&#8250;</button>
+  </div>
+  <div class="dots" id="dots"></div>
+</div>
+
+<script>
+// ============================================================
+// Image URLs (31 unique)
+// ============================================================
+const IMG=[
+"https://img.cdn1.vip/i/6a81405f0a12f_1786855519.webp",   // 0  Chinese temple roof at dusk (landscape)
+"https://img.cdn1.vip/i/6a81419084f34_1786855824.webp",   // 1  Cherry blossoms vs blue sky (portrait)
+"https://img.cdn1.vip/i/6a81411d59840_1786855709.webp",   // 2  Cherry blossoms trio + book (portrait composite)
+"https://img.cdn1.vip/i/6a8140d5e8113_1786855637.webp",   // 3  Window frame sunset city (square)
+"https://img.cdn1.vip/i/6a8140658e52e_1786855525.webp",   // 4  Pink azalea in hand + stickers (portrait composite)
+"https://img.cdn1.vip/i/6a8140c9cd75f_1786855625.webp",   // 5  Yellow daisy + star stickers (portrait composite)
+"https://img.cdn1.vip/i/6a8141773df76_1786855799.webp",   // 6  Indoor curtain + sunset over city (landscape)
+"https://img.cdn1.vip/i/6a8140b4c7922_1786855604.webp",   // 7  Beach sunset golden water (portrait)
+"https://img.cdn1.vip/i/6a8140a0e69c4_1786855584.webp",   // 8  Orange light installation (square)
+"https://img.cdn1.vip/i/6a81407b711be_1786855547.webp",   // 9  Wave on sand close-up (landscape)
+"https://img.cdn1.vip/i/6a814066cf401_1786855526.webp",   // 10 Cable bridge at dusk (portrait)
+"https://img.cdn1.vip/i/6a81405b18141_1786855515.webp",   // 11 Shanghai Oriental Pearl (portrait)
+"https://img.cdn1.vip/i/6a81412dd2922_1786855725.webp",   // 12 Beach daytime (landscape)
+"https://img.cdn1.vip/i/6a8141134f6a5_1786855699.webp",   // 13 Red thread art (portrait)
+"https://img.cdn1.vip/i/6a8140e473a2d_1786855652.webp",   // 14 Red thread art 2 (portrait)
+"https://img.cdn1.vip/i/6a8140d055ded_1786855632.webp",   // 15 Black thread + figure (portrait)
+"https://img.cdn1.vip/i/6a8140a8e7083_1786855592.webp",   // 16 Gothic Westminster building (portrait)
+"https://img.cdn1.vip/i/6a81408598d19_1786855557.webp",   // 17 Starbucks Reserve brick facade (landscape)
+"https://img.cdn1.vip/i/6a8140ae6ab8b_1786855598.webp",   // 18 Chongqing mountain city dusk (portrait)
+"https://img.cdn1.vip/i/6a814070db2fb_1786855536.webp",   // 19 HK narrow street Pizzeria Italia (portrait)
+"https://img.cdn1.vip/i/6a81408a70f18_1786855562.webp",   // 20 Autumn maple (landscape)
+"https://img.cdn1.vip/i/6a8140d4907bc_1786855636.webp",   // 21 HK bus stop night (portrait)
+"https://img.cdn1.vip/i/6a8140da4892f_1786855642.webp",   // 22 Yellow ginkgo beside building (landscape)
+"https://img.cdn1.vip/i/6a81414580205_1786855749.webp",   // 23 Yellow archway framing ginkgo (portrait)
+"https://img.cdn1.vip/i/6a8140ee152e6_1786855662.webp",   // 24 Shop window TV toy (portrait)
+"https://img.cdn1.vip/i/6a8140fc12a99_1786855676.webp",   // 25 Ice cream truck Art March (portrait)
+"https://img.cdn1.vip/i/6a81411fc23e4_1786855711.webp",   // 26 Stone lions red scarves (portrait)
+"https://img.cdn1.vip/i/6a8140f841dd7_1786855672.webp",   // 27 Beijing Drum Tower street (portrait)
+"https://img.cdn1.vip/i/6a8140be286ef_1786855614.webp",   // 28 Beijing hutong brick wall (portrait)
+"https://img.cdn1.vip/i/6a814195f2b47_1786855829.webp",   // 29 Beijing hutong with door (portrait)
+"https://img.cdn1.vip/i/6a8141a3440f4_1786855843.webp",   // 30 Rain on window night (landscape)
+];
+
+// ============================================================
+// Cover polaroids (5 photos — visual variety)
+// ============================================================
+const POLAROIDS=[
+  {img:IMG[1], top:'6%',  left:'8%',  w:130, rot:-9, pin:true, cap:'spring'},
+  {img:IMG[11],top:'4%',  left:'48%', w:115, rot:7,  clip:true,cap:'city'},
+  {img:IMG[20],top:'40%', left:'6%',  w:120, rot:5,  pin:true, cap:'autumn'},
+  {img:IMG[22],top:'46%', left:'45%', w:128, rot:-7, clip:true,cap:'golden'},
+  {img:IMG[28],top:'26%', left:'28%', w:122, rot:3,  pin:true, cap:'alleys'},
+];
+
+// ============================================================
+// Page Definitions — 12 spreads, grouped by visual style
+// Each photo is shown at native aspect ratio (no crop)
+// ============================================================
+const PAGES=[
+  // ─── 0. COVER ─────────────────────────────────────────────
+  {left:{type:'coverL'}, right:{type:'coverR',polaroids:POLAROIDS}},
+
+  // ─── 1. PROLOGUE — text L / hero single R ─────────────────
+  {
+    left:{type:'text', tag:'PROLOGUE', title:'The Art of <em>Seeing</em>',
+      body:'<p>Photography is not about what you see.</p><p>It is about what you notice when everything else goes quiet.</p>'},
+    right:{type:'hero', img:IMG[2], num:'I', title:'spring blossoms'}
+  },
+
+  // ─── 2. SPRING WHISPERS — text L / collage duo R ─────────
+  {
+    left:{type:'text', num:'01', tag:'SPRING WHISPERS', title:'Flowers & <em>Stickers</em>',
+      body:'<p>Small arrangements of petals, paper, and a few stickers.</p><p>The quiet rituals of an idle afternoon.</p>'},
+    right:{type:'duo', imgs:[IMG[4],IMG[5]]}
+  },
+
+  // ─── 3. CITY BONES — hero single L / text R ──────────────
+  {
+    left:{type:'hero', img:IMG[10], num:'II', title:'cable-stayed, dusk'},
+    right:{type:'text', num:'02', tag:'CITY BONES', title:'Built <em>Geometry</em>',
+      body:'<p>Steel and suspension — a quiet ode to the structures that hold cities together.</p>'}
+  },
+
+  // ─── 4. SKYLINE — text L / architectural duo R ───────────
+  {
+    left:{type:'text', num:'03', tag:'SKYLINE', title:'Two <em>Cathedrals</em>',
+      body:'<p>The future and the medieval, separated by oceans and centuries.</p><p>Both reaching for the same sky.</p>'},
+    right:{type:'duo', imgs:[IMG[11],IMG[16]]}
+  },
+
+  // ─── 5. STREETS — urban trio L / text R ──────────────────
+  {
+    left:{type:'trio', imgs:[IMG[27],IMG[19],IMG[17]]},
+    right:{type:'text', num:'04', tag:'STREETS', title:'Beijing · Hong <em>Kong</em>',
+      body:'<p>Signage in red and blue.</p><p>The vocabulary of cities that never stop talking.</p>'}
+  },
+
+  // ─── 6. GOLDEN COAST — text L / beach hero R ─────────────
+  {
+    left:{type:'text', num:'05', tag:'GOLDEN COAST', title:'Twenty <em>Minutes</em>',
+      body:'<p>The window of golden hour is small —</p><p>but the light it pours is infinite.</p>'},
+    right:{type:'hero', img:IMG[7], num:'III', title:'sunset on the water'}
+  },
+
+  // ─── 7. HERITAGE DUSK — duo L / text R ───────────────────
+  {
+    left:{type:'duo', imgs:[IMG[0],IMG[18]]},
+    right:{type:'text', num:'06', tag:'HERITAGE', title:'Roofs & <em>Cliffsides</em>',
+      body:'<p>Old cities do not shout.</p><p>They simply lean their eaves into the sunset and wait for you to notice.</p>'}
+  },
+
+  // ─── 8. ANCIENT ALLEYS — text L / hutong duo R ───────────
+  {
+    left:{type:'text', num:'07', tag:'ANCIENT ALLEYS', title:'Grey <em>Brick</em>',
+      body:'<p>Walls that remember every bicycle bell, every shouted name, every winter passed.</p>'},
+    right:{type:'duo', imgs:[IMG[28],IMG[29]]}
+  },
+
+  // ─── 9. AUTUMN GOLD — golden trio L / text R ─────────────
+  {
+    left:{type:'trio', imgs:[IMG[20],IMG[22],IMG[23]]},
+    right:{type:'text', num:'08', tag:'AUTUMN GOLD', title:'The <em>Last</em> Color',
+      body:'<p>Before the trees lose their gold, they flare once — brighter than summer ever dared.</p>'}
+  },
+
+  // ─── 10. THREADS OF LIGHT — text L / art trio R ──────────
+  {
+    left:{type:'text', num:'09', tag:'THREADS OF LIGHT', title:'Woven <em>Air</em>',
+      body:'<p>Installations that exist only because of the light they catch.</p><p>Architecture without mass. Drawing without ink.</p>'},
+    right:{type:'trio', imgs:[IMG[13],IMG[14],IMG[15]]}
+  },
+
+  // ─── 11. EPILOGUE — Left: title / Right: ✨ Thank You ────
+  {
+    left:{type:'finaleL'},
+    right:{type:'finaleR'}
+  },
+];
+
+// ============================================================
+// Render: photo "hero" — single large plate, NO CROP
+// ============================================================
+function heroHTML(img, num, title){
+  return '<div class="page"><div class="plate-hero">'+
+    '<img src="'+img+'" loading="lazy" alt="Photograph">'+
+    (num? '<div class="pl-caption"><span class="pl-num">Plate '+num+'</span>'+(title||'')+'</div>':'')+
+  '</div></div>';
+}
+
+// ============================================================
+// Render: plate pair / trio — each plate contains its photo
+// at native aspect ratio (object-fit: contain)
+// ============================================================
+function plateRowHTML(imgs){
+  var html='<div class="page"><div class="plate-page">';
+  imgs.forEach(function(u){
+    html+='<div class="plate"><img src="'+u+'" loading="lazy" alt="Photograph"></div>';
+  });
+  html+='</div></div>';
+  return html;
+}
+
+// ============================================================
+// Render: Left Page
+// ============================================================
+function renderLeft(p){
+  if(!p) return '';
+  if(p.type==='coverL'){
+    return '<div class="page dark cover-left">'+
+      '<div class="cover-corner-tl">Est. 2026 &nbsp;·&nbsp; Vol. I</div>'+
+      '<div class="cover-center">'+
+        '<div class="cover-label">Gloria\'s Portfolio &nbsp;/&nbsp; 2026</div>'+
+        '<div class="cover-title">Photo<em>graphy</em></div>'+
+        '<div class="cover-sub">— a visual journal</div>'+
+      '</div>'+
+      '<div class="cover-corner-bl">A Visual Journal</div>'+
+    '</div>';
+  }
+  if(p.type==='text'){
+    return '<div class="page"><div class="text-page">'+
+      '<div class="tag">'+(p.num?'<span class="num">'+p.num+'</span><span class="dash"></span>':'')+p.tag+'</div>'+
+      '<div class="headline">'+p.title+'</div>'+
+      '<div class="deco-line"></div>'+
+      '<div class="body-italic">'+p.body+'</div>'+
+    '</div><div class="page-corner l">'+(p.tag||'')+'</div></div>';
+  }
+  if(p.type==='hero'){
+    return heroHTML(p.img, p.num, p.title);
+  }
+  if(p.type==='duo'||p.type==='trio'){
+    return plateRowHTML(p.imgs);
+  }
+  if(p.type==='apple'){
+    return appleHTML();
+  }
+  if(p.type==='finaleL'){
+    return finaleLHTML();
+  }
+  if(p.type==='finaleR'){
+    return finaleRHTML();
+  }
+  return '<div class="page"></div>';
+}
+
+// ============================================================
+// Render: Right Page
+// ============================================================
+function renderRight(p){
+  if(!p) return '';
+
+  if(p.type==='coverR'){
+    var pols='';
+    p.polaroids.forEach(function(po){
+      pols+='<div class="polaroid" style="top:'+po.top+';left:'+po.left+';width:'+po.w+'px;transform:rotate('+po.rot+'deg)">'+
+        (po.pin?'<div class="pin"></div>':'<div class="clip"></div>')+
+        '<img src="'+po.img+'" loading="lazy" style="height:'+(po.w*0.78)+'px">'+
+        '<div class="cap">'+po.cap+'</div>'+
+      '</div>';
+    });
+    pols+='<div class="deco-text" style="top:14px;right:20px">FILM · 35mm · 2026</div>';
+    pols+='<div class="deco-text" style="bottom:16px;left:20px">A COLLECTION OF MOMENTS</div>';
+    pols+='<div class="deco-text" style="bottom:16px;right:20px">— GLORIA</div>';
+    return '<div class="page dark cover-right">'+pols+'</div>';
+  }
+
+  if(p.type==='text'){
+    return '<div class="page"><div class="text-page">'+
+      '<div class="tag">'+(p.num?'<span class="num">'+p.num+'</span><span class="dash"></span>':'')+p.tag+'</div>'+
+      '<div class="headline">'+p.title+'</div>'+
+      '<div class="deco-line"></div>'+
+      '<div class="body-italic">'+p.body+'</div>'+
+    '</div><div class="page-corner r">'+(p.tag||'')+'</div></div>';
+  }
+
+  if(p.type==='hero'){
+    return heroHTML(p.img, p.num, p.title);
+  }
+
+  if(p.type==='duo'||p.type==='trio'){
+    return plateRowHTML(p.imgs);
+  }
+
+  if(p.type==='apple'){
+    return appleHTML();
+  }
+  if(p.type==='finaleL'){
+    return finaleLHTML();
+  }
+  if(p.type==='finaleR'){
+    return finaleRHTML();
+  }
+
+  return '<div class="page"></div>';
+}
+
+// ============================================================
+// Apple / Thank You Page
+// ============================================================
+function appleHTML(){
+  return '<div class="page"><div class="apple-page">'+
+    '<div class="apple">🍎</div>'+
+    '<div class="thanks">Thank <em>you</em></div>'+
+    '<div class="thanks-sub">Gloria · 2026</div>'+
+    '<div class="thanks-fin">— fin. —</div>'+
+  '</div></div>';
+}
+
+// ============================================================
+// Finale Left — "Photography Portfolio"
+// ============================================================
+function finaleLHTML(){
+  return '<div class="page"><div class="finale-left">'+
+    '<div class="finale-label">Gloria · 2026</div>'+
+    '<div class="finale-title">Photography</div>'+
+    '<div class="finale-title-sub"><em>Portfolio</em></div>'+
+    '<div class="finale-line"></div>'+
+    '<div class="finale-meta">A Visual Journal &nbsp;·&nbsp; Est. 2026</div>'+
+  '</div></div>';
+}
+
+// ============================================================
+// Finale Right — ✨ + Thank You
+// ============================================================
+function finaleRHTML(){
+  return '<div class="page"><div class="apple-page">'+
+    '<div class="apple">✨</div>'+
+    '<div class="thanks">Thank <em>you</em></div>'+
+    '<div class="thanks-sub">Gloria · 2026</div>'+
+    '<div class="thanks-fin">— fin. —</div>'+
+  '</div></div>';
+}
+
+// ============================================================
+// Book State & Flip Logic
+// ============================================================
+var current=0, flipping=false;
+var baseL=document.getElementById('baseL');
+var baseR=document.getElementById('baseR');
+var flipper=document.getElementById('flipper');
+var flipF=document.getElementById('flipF');
+var flipB=document.getElementById('flipB');
+var prevBtn=document.getElementById('prev');
+var nextBtn=document.getElementById('next');
+
+function showPage(i){
+  baseL.innerHTML=renderLeft(PAGES[i].left);
+  baseR.innerHTML=renderRight(PAGES[i].right);
+}
+
+function updateUI(){
+  document.querySelectorAll('.dot').forEach(function(d,i){d.classList.toggle('active',i===current)});
+  prevBtn.disabled=current===0;
+  nextBtn.disabled=current===PAGES.length-1;
+  var lbl=document.getElementById('pageLabel');
+  if(lbl) lbl.textContent=(String(current+1).padStart(2,'0')+' / '+String(PAGES.length).padStart(2,'0'));
+}
+
+function go(dir){
+  if(flipping) return;
+  var next=current+dir;
+  if(next<0||next>=PAGES.length) return;
+  flipping=true;
+
+  if(dir>0){
+    flipper.className='flipper flip-r';
+    flipper.style.display='block';
+    flipF.innerHTML=renderRight(PAGES[current].right);
+    flipB.innerHTML=renderLeft(PAGES[next].left);
+    baseL.innerHTML=renderLeft(PAGES[current].left);
+    baseR.innerHTML=renderRight(PAGES[next].right);
+    void flipper.offsetWidth;
+    flipper.classList.add('go-fwd');
+    setTimeout(function(){
+      current=next; showPage(current);
+      flipper.style.display='none'; flipper.className='flipper';
+      flipping=false; updateUI();
+    },950);
+  } else {
+    flipper.className='flipper flip-l';
+    flipper.style.display='block';
+    flipF.innerHTML=renderLeft(PAGES[current].left);
+    flipB.innerHTML=renderRight(PAGES[next].right);
+    baseL.innerHTML=renderLeft(PAGES[next].left);
+    baseR.innerHTML=renderRight(PAGES[current].right);
+    void flipper.offsetWidth;
+    flipper.classList.add('go-bwd');
+    setTimeout(function(){
+      current=next; showPage(current);
+      flipper.style.display='none'; flipper.className='flipper';
+      flipping=false; updateUI();
+    },950);
+  }
+}
+
+// Build pagination dots
+var dotsEl=document.getElementById('dots');
+PAGES.forEach(function(p,i){
+  var d=document.createElement('button');
+  d.className='dot'+(i===0?' active':'');
+  d.onclick=function(){if(!flipping&&i!==current){var dir=i>current?1:-1;go(dir)}};
+  dotsEl.appendChild(d);
+});
+var lbl=document.createElement('span');
+lbl.className='page-label';
+lbl.id='pageLabel';
+lbl.textContent='01 / '+String(PAGES.length).padStart(2,'0');
+dotsEl.appendChild(lbl);
+
+// Keyboard
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowLeft') go(-1);
+  if(e.key==='ArrowRight') go(1);
+});
+
+// Touch swipe
+var touchX=0, touchY=0;
+document.addEventListener('touchstart',function(e){
+  touchX=e.touches[0].clientX; touchY=e.touches[0].clientY;
+},{passive:true});
+document.addEventListener('touchend',function(e){
+  var dx=e.changedTouches[0].clientX-touchX;
+  var dy=e.changedTouches[0].clientY-touchY;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)) go(dx>0?-1:1);
+},{passive:true});
+
+// Cover parallax
+var coverEl=document.getElementById('book');
+coverEl.addEventListener('mousemove',function(e){
+  if(current!==0||flipping) return;
+  var rect=coverEl.getBoundingClientRect();
+  var x=(e.clientX-rect.left)/rect.width-0.5;
+  var y=(e.clientY-rect.top)/rect.height-0.5;
+  var pols=document.querySelectorAll('.polaroid');
+  pols.forEach(function(po,i){
+    var depth=(i+1)*0.5;
+    var baseRot=['-9','7','5','-7','3'][i]||0;
+    po.style.transform='rotate('+baseRot+'deg) translate('+(x*depth)+'px,'+(y*depth)+'px)';
+  });
+});
+
+// Init
+showPage(0);
+updateUI();
+window.addEventListener('load',function(){setTimeout(function(){document.getElementById('loading').classList.add('hide')},400)});
+setTimeout(function(){document.getElementById('loading').classList.add('hide')},3000);
+</script>
+</body>
+</html>
